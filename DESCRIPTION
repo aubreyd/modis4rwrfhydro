@@ -19,10 +19,3 @@ Maintainer: Matteo Mattiuzzi <matteo@mattiuzzi.com>
 Description: Download and processing functionalities for the Moderate Resolution Imaging Spectroradiometer (MODIS). The package provides automated access to the global online data archives (LPDAAC and LAADS) and processing capabilities such as file conversion, mosaicking, subsetting and time series filtering. 
 License: GPL (>=3)
 URL: http://r-forge.r-project.org/projects/modis/
-ByteCompile: TRUE
-Repository: R-Forge
-Repository/R-Forge/Project: modis
-Repository/R-Forge/Revision: 490
-Repository/R-Forge/DateTimeStamp: 2015-04-16 18:49:53
-Date/Publication: 2015-04-16 18:49:53
-Packaged: 2015-04-16 19:05:19 UTC; rforge
