@@ -321,6 +321,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL, extent=NULL, 
                             ofile
                             )
                   cmd <- gsub(x=cmd,pattern="\"",replacement="'")
+                  print(cmd)
                   system(cmd)
                 } else # windows
                 {
