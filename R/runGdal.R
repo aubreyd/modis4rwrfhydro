@@ -1,5 +1,21 @@
 
-runGdal <- function(product, collection=NULL, begin=NULL,end=NULL, extent=NULL, tileH=NULL, tileV=NULL, buffer=0, SDSstring=NULL, job=NULL, checkIntegrity=TRUE, wait=0.5, quiet=FALSE,...)
+runGdal <- function(product, collection=NULL, begin=NULL,end=NULL, 
+                    extent=NULL, tileH=NULL, tileV=NULL, 
+                    buffer=0, SDSstring=NULL, job=NULL, 
+                    checkIntegrity=TRUE, wait=0.5, quiet=FALSE,
+                    exclList=NULL, resampList=NULL, ...)
+#                    exclList=list("Fpar_1km"="gt 100", 
+#                                 "Lai_1km"="gt 100", 
+#                                 "FparLai_QC"="255", 
+#                                 "FparExtra_QC"="255", 
+#                                 "FparStdDev_1km"="gt 100", 
+#                                 "LaiStdDev_1km"="gt 100"), 
+#                    resampList=list("Fpar_1km"="bilinear", 
+#                                     "Lai_1km"="bilinear", 
+#                                     "FparLai_QC"="mode", 
+#                                     "FparExtra_QC"="mode", 
+#                                     "FparStdDev_1km"="bilinear", 
+#                                     "LaiStdDev_1km"="bilinear"), ...)
 {
     opts <- combineOptions(...)
     # debug:
@@ -240,9 +256,9 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL, extent=NULL, 
               w <- getOption("warn")
               options("warn"= -1)
               SDS <- list()
-              for (z in seq_along(files))
+              for (zz in seq_along(files))
               { # get all SDS names for one chunk
-                SDS[[z]] <- getSds(HdfName=files[z], SDSstring=SDSstring, method="GDAL")
+                SDS[[zz]] <- getSds(HdfName=files[zz], SDSstring=SDSstring, method="GDAL")
               }
               options("warn"= w)
             
@@ -258,16 +274,47 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL, extent=NULL, 
                   
                 gdalSDS <- sapply(SDS,function(x){x$SDS4gdal[i]}) # get names of layer 'o' of all files (SDS)
                 
-                naID <- which(SDS[[1]]$SDSnames == names(NAS)[i])
+                naID <- which( names(NAS) == SDS[[1]]$SDSnames[i] )
                 if(length(naID)>0)
                 {
                   srcnodata <- paste0(" -srcnodata ",NAS[[naID]])
                   dstnodata <- paste0(" -dstnodata ",NAS[[naID]])
-                } else
-                {
+                } else {
                   srcnodata <- NULL
                   dstnodata <- NULL 
                 }
+                
+                # Figure out exclusion ranges if provided
+                exclID<-NULL
+                exclStr<-NULL
+                if (!is.null(exclList)) {
+                  exclID <- which( names(exclList) == SDS[[1]]$SDSnames[i] )
+                }
+                if(length(exclID)>0) {
+                  exclStr <- exclList[[SDS[[1]]$SDSnames[i]]]
+                  if (length(unlist(strsplit(exclStr, split=" "))) == 1) {
+                    exclQual <- 'none'
+                    exclNum <- unlist(strsplit(exclStr, split=" "))[1]
+                  } else if (length(unlist(strsplit(exclStr, split=" "))) == 2) {
+                    exclQual <- unlist(strsplit(exclStr, split=" "))[1]
+                    exclNum <- unlist(strsplit(exclStr, split=" "))[2]
+                  } else {
+                    error("Invalid exclList entry.")
+                    return()
+                  }
+                  compStr1 <- list("none"="!=", "gt"="<=", "lt"=">=")
+                  compStr2 <- list("none"="==", "gt"=">", "lt"="<")
+                }
+                
+                # Figure out resampling method if provided
+                resampID<-NULL
+                resampStr<-NULL
+                if( SDS[[1]]$SDSnames[i] %in% names(resampList) ) {
+                  resampStr <- resampList[[SDS[[1]]$SDSnames[i]]]
+                } else {
+                  resampStr <- opts$resamplingType
+                }
+                rt <- paste0(" -r ", resampStr)
  
                 if(length(grep(todo,pattern="M.D13C2\\.005"))>0)
                 {
@@ -282,6 +329,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL, extent=NULL, 
                   {
                     cmd1 <- paste0(opts$gdalPath,"gdal_translate -a_nodata ",NAS[[naID]]," '",gdalSDS[ix],"' '",randomName[ix],"'")   
                     cmd2 <- paste0(opts$gdalPath,"gdal_edit.py -a_ullr -180 90 180 -90 '",randomName[ix],"'")
+                    cmd3 <- paste0(opts$gdalPath, )
                     
                     if (.Platform$OS=="unix")
                     {
@@ -301,6 +349,43 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL, extent=NULL, 
                 {
                   ifile <- paste0(gdalSDS,collapse="' '")
                   ofile <- paste0(outDir, '/', outname)
+                  
+                  # New intermediate step to convert excluded value ranges to "nodata" val before running main conversion.
+                  # This should aid using interpolation methods other than near and mode.
+                  if (length(exclID)>0) {
+                    ranpat     <- MODIS:::makeRandomString(length=21)
+                    randomName <- paste0(outDir,"/deleteMe_",ranpat,".tif") 
+                    on.exit(unlink(list.files(path=outDir,pattern=ranpat,full.names=TRUE),recursive=TRUE))
+                    cmd_pre <- paste0(opts$gdalPath,"gdal_calc.py ", 
+                                       "-A ", "'", ifile, "'", 
+                                       " --NoDataValue=", as.character(NAS[[naID]]), 
+                                       " --outfile=", "'", randomName, "'",
+                                       " --calc='A*(A", compStr1[[exclQual]],
+                                       as.character(exclNum), ")+(",
+                                       as.character(NAS[[naID]]), ")*(A", compStr2[[exclQual]], 
+                                       as.character(exclNum), ")'", " --overwrite")
+                    print(cmd_pre)
+                    system(cmd_pre)
+                    cmd   <- paste0(opts$gdalPath,
+                                    "gdalwarp",
+                                    s_srs,
+                                    t_srs,
+                                    of,
+                                    te,
+                                    tr,
+                                    cp,
+                                    bs,
+                                    rt,
+                                    q,
+                                    srcnodata,
+                                    dstnodata,
+                                    " -overwrite",
+                                    " -multi",
+                                    " \'", randomName,"\'",
+                                    " ",
+                                    ofile)
+                  } else {
+                  # Original
                   cmd   <- paste0(opts$gdalPath,
                         "gdalwarp",
                             s_srs,
@@ -320,6 +405,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL, extent=NULL, 
                             " ",
                             ofile
                             )
+                  }
                   cmd <- gsub(x=cmd,pattern="\"",replacement="'")
                   print(cmd)
                   system(cmd)

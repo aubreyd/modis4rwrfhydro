@@ -11,7 +11,7 @@ This function uses a modified whittaker filter function (see references) from pa
 }
 
 \usage{
-whittaker.raster((vi, w=NULL, t=NULL, timeInfo = orgTime(vi), lambda = 5000, nIter= 3, outputAs=c("single","yearly","one"), collapse=FALSE, prefixSuffix=c("MCD","ndvi"), outDirPath=getwd(), outlierThreshold=NULL, mergeDoyFun="max", ...)
+whittaker.raster(vi, w=NULL, t=NULL, timeInfo = orgTime(vi), lambda = 5000, nIter= 3, outputAs=c("single","yearly","one"), collapse=FALSE, prefixSuffix=c("MCD","ndvi"), outDirPath=getwd(), removeOutlier=FALSE, outlierThreshold=NULL, mergeDoyFun="max", ...)
 }
 
 \arguments{
