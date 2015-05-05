@@ -364,7 +364,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
                                        as.character(exclNum), ")+(",
                                        as.character(NAS[[naID]]), ")*(A", compStr2[[exclQual]], 
                                        as.character(exclNum), ")'", " --overwrite")
-                    print(cmd_pre)
+                    if (!quiet) {print(cmd_pre)}
                     system(cmd_pre)
                     cmd   <- paste0(opts$gdalPath,
                                     "gdalwarp",
@@ -407,7 +407,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
                             )
                   }
                   cmd <- gsub(x=cmd,pattern="\"",replacement="'")
-                  print(cmd)
+                  if (!quiet) {print(cmd)}
                   system(cmd)
                 } else # windows
                 {
