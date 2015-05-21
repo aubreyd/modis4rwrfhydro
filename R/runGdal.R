@@ -5,23 +5,17 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
                     checkIntegrity=TRUE, wait=0.5, quiet=FALSE,
                     exclList=NULL, resampList=NULL, 
                     scriptPath=NULL, ...)
-#                    exclList=list("Fpar_1km"="gt 100", 
-#                                 "Lai_1km"="gt 100", 
-#                                 "FparLai_QC"="255", 
-#                                 "FparExtra_QC"="255", 
-#                                 "FparStdDev_1km"="gt 100", 
-#                                 "LaiStdDev_1km"="gt 100"), 
-#                    resampList=list("Fpar_1km"="bilinear", 
-#                                     "Lai_1km"="bilinear", 
-#                                     "FparLai_QC"="mode", 
-#                                     "FparExtra_QC"="mode", 
-#                                     "FparStdDev_1km"="bilinear", 
-#                                     "LaiStdDev_1km"="bilinear"), ...)
+
 {
     opts <- combineOptions(...)
     # debug:
-    # opts    <- combineOptions();product="MYD09GQ";collection=NULL; begin='2007.12.03'; end='2007.12.03'; extent=siteExtent; tileH=NULL; tileV=NULL; buffer=0; SDSstring=NULL; job=NULL; checkIntegrity=TRUE; wait=0.5; quiet=FALSE
-          
+    # opts <- MODIS:::combineOptions()
+    # product="MOD15A2"; collection=NULL; begin='2013.06.01'; end='2013.06.05'; tileH=NULL; tileV=NULL
+    # buffer=0.04; SDSstring=NULL; job=NULL; checkIntegrity=TRUE; wait=0.5; quiet=FALSE; scriptPath=NULL
+    # exclList=list("Fpar_1km"="gt 100", "Lai_1km"="gt 100", "FparLai_QC"="255", "FparExtra_QC"="255", "FparStdDev_1km"="gt 100", "LaiStdDev_1km"="gt 100") 
+    # resampList=list("Fpar_1km"="bilinear", "Lai_1km"="bilinear", "FparLai_QC"="mode", "FparExtra_QC"="mode", "FparStdDev_1km"="bilinear", "LaiStdDev_1km"="bilinear"), ...)     
+    # extent <- 
+    
     if(!opts$gdalOk)
     {
         stop("GDAL not installed or configured, read in '?MODISoptions' for help")
@@ -30,7 +24,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
     product <- getProduct(product,quiet=TRUE)
     
     # check for optional python script path
-    if (is.null(scriptPath)) scriptPath == opts$gdalPath
+    if (is.null(scriptPath)) scriptPath = opts$gdalPath
     
     # optional and if missing it is added here:
     product$CCC <- getCollection(product,collection=collection)
@@ -60,7 +54,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
     {
         dataFormat <- grep(opts$gdalOutDriver$name, pattern=paste("^",dataFormat,"$",sep=""),ignore.case = TRUE,value=TRUE)
         of <- paste0(" -of ",dataFormat)
-        extension  <- getExtension(dataFormat)
+        extension  <- MODIS:::getExtension(dataFormat)
     } else 
     {
         stop('in argument dataFormat=\'',opts$dataFormat,'\', format not supported by GDAL type: \'gdalWriteDriver()\' (column \'name\') to list available inputs')
@@ -82,11 +76,11 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
     cat("########################\n")
     if(!is.null(extent$target$outProj))
     {
-      outProj <- checkOutProj(extent$target$outProj,tool="GDAL")
+      outProj <- MODIS:::checkOutProj(extent$target$outProj,tool="GDAL")
       cat("outProj          = ",outProj ," (Specified by raster*/spatial* object)\n")
     } else
     {
-      outProj <- checkOutProj(opts$outProj,tool="GDAL")
+      outProj <- MODIS:::checkOutProj(opts$outProj,tool="GDAL")
       cat("outProj          = ",outProj,"\n")
     }
     if (outProj == "asIn")
@@ -131,7 +125,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
     }
     
     #### resamplingType
-    opts$resamplingType <- checkResamplingType(opts$resamplingType, tool="gdal")
+    opts$resamplingType <- MODIS:::checkResamplingType(opts$resamplingType, tool="gdal")
     cat("resamplingType   = ", opts$resamplingType,"\n")
     rt <- paste0(" -r ",opts$resamplingType)
     
@@ -206,6 +200,10 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
       q <- NULL
     }
     
+    # Setup exclusion range qualifiers
+    compStr1 <- list("none"="!=", "gt"="<=", "lt"=">=")
+    compStr2 <- list("none"="==", "gt"=">", "lt"="<")
+    
     for (z in seq_along(product$PRODUCT))
     { # z=1
       todo <- paste(product$PRODUCT[z],".",product$CCC[[product$PRODUCT[z]]],sep="")    
@@ -229,7 +227,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
       for(u in seq_along(todo))
       { # u=1
         ftpdirs      <- list()
-        ftpdirs[[1]] <- as.Date(getStruc(product=strsplit(todo[u],"\\.")[[1]][1],collection=strsplit(todo[u],"\\.")[[1]][2],begin=tLimits$begin,end=tLimits$end,server=opts$MODISserverOrder[1])$dates)
+        ftpdirs[[1]] <- as.Date(MODIS:::getStruc(product=strsplit(todo[u],"\\.")[[1]][1],collection=strsplit(todo[u],"\\.")[[1]][2],begin=tLimits$begin,end=tLimits$end,server=opts$MODISserverOrder[1])$dates)
         
         prodname <- strsplit(todo[u],"\\.")[[1]][1] 
         coll     <- strsplit(todo[u],"\\.")[[1]][2]
@@ -262,7 +260,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
               SDS <- list()
               for (zz in seq_along(files))
               { # get all SDS names for one chunk
-                SDS[[zz]] <- getSds(HdfName=files[zz], SDSstring=SDSstring, method="GDAL")
+                SDS[[zz]] <- MODIS:::getSds(HdfName=files[zz], SDSstring=SDSstring, method="GDAL")
               }
               options("warn"= w)
             
@@ -306,8 +304,6 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
                     error("Invalid exclList entry.")
                     return()
                   }
-                  compStr1 <- list("none"="!=", "gt"="<=", "lt"=">=")
-                  compStr2 <- list("none"="==", "gt"=">", "lt"="<")
                 }
                 
                 # Figure out resampling method if provided
@@ -357,38 +353,25 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
                   # New intermediate step to convert excluded value ranges to "nodata" val before running main conversion.
                   # This should aid using interpolation methods other than near and mode.
                   if (length(exclID)>0) {
-                    ranpat     <- MODIS:::makeRandomString(length=21)
-                    randomName <- paste0(outDir,"/deleteMe_",ranpat,".tif") 
-                    on.exit(unlink(list.files(path=outDir,pattern=ranpat,full.names=TRUE),recursive=TRUE))
-                    cmd_pre <- paste0(scriptPath,"gdal_calc.py ", 
-                                       "-A ", "'", ifile, "'", 
+                    outList<-c()
+                    for (m in 1:length(gdalSDS)) {
+                      ranpat2     <- MODIS:::makeRandomString(length=21)
+                      randomName <- paste0(outDir,"/deleteMe_",ranpat2,".tif") 
+                      on.exit(unlink(list.files(path=outDir,pattern=ranpat2,full.names=TRUE),recursive=TRUE))
+                      cmd_pre <- paste0(scriptPath,"gdal_calc.py ", 
+                                       "-A ", "'", gdalSDS[m], "'", 
                                        " --NoDataValue=", as.character(NAS[[naID]]), 
                                        " --outfile=", "'", randomName, "'",
                                        " --calc='A*(A", compStr1[[exclQual]],
                                        as.character(exclNum), ")+(",
                                        as.character(NAS[[naID]]), ")*(A", compStr2[[exclQual]], 
                                        as.character(exclNum), ")'", " --overwrite")
-                    if (!quiet) {print(cmd_pre)}
-                    system(cmd_pre)
-                    cmd   <- paste0(opts$gdalPath,
-                                    "gdalwarp",
-                                    s_srs,
-                                    t_srs,
-                                    of,
-                                    te,
-                                    tr,
-                                    cp,
-                                    bs,
-                                    rt,
-                                    q,
-                                    srcnodata,
-                                    dstnodata,
-                                    " -overwrite",
-                                    " -multi",
-                                    " \'", randomName,"\'",
-                                    " ",
-                                    ofile)
-                  } else {
+                      if (!quiet) {print(cmd_pre)}
+                      system(cmd_pre)
+                      outList <- c(outList, randomName)
+                      }
+                    ifile <- paste0(outList, collapse="' '")
+                  }
                   # Original
                   cmd   <- paste0(opts$gdalPath,
                         "gdalwarp",
@@ -409,12 +392,13 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
                             " ",
                             ofile
                             )
-                  }
                   cmd <- gsub(x=cmd,pattern="\"",replacement="'")
                   if (!quiet) {print(cmd)}
                   system(cmd)
                 } else # windows
                 {
+                  if (length(exclID)>0) print("Exclusion ranges not implemented in Windows. Continuing with default single value.")
+                  
                   cmd <- paste0(opts$gdalPath,"gdalwarp")
                
                   # ifile <- paste(shortPathName(gdalSDS),collapse='\" \"',sep=' ')
@@ -449,6 +433,9 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
                     if(length(grep(todo,pattern="M.D13C2\\.005"))>0)
                     {
                       unlink(list.files(path=outDir,pattern=ranpat,full.names=TRUE),recursive=TRUE)
+                    }
+                    if (length(exclID)>0) {
+                      unlink(list.files(path=outDir,pattern=glob2rx("deleteMe_*.tif"),full.names=TRUE),recursive=TRUE)
                     }
                   }
                 } else
