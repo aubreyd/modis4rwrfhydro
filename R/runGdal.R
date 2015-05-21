@@ -3,7 +3,8 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
                     extent=NULL, tileH=NULL, tileV=NULL, 
                     buffer=0, SDSstring=NULL, job=NULL, 
                     checkIntegrity=TRUE, wait=0.5, quiet=FALSE,
-                    exclList=NULL, resampList=NULL, ...)
+                    exclList=NULL, resampList=NULL, 
+                    scriptPath=NULL, ...)
 #                    exclList=list("Fpar_1km"="gt 100", 
 #                                 "Lai_1km"="gt 100", 
 #                                 "FparLai_QC"="255", 
@@ -27,6 +28,9 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
     }
     # absolutly needed
     product <- getProduct(product,quiet=TRUE)
+    
+    # check for optional python script path
+    if (isnull(scriptPath)) scriptPath == opts$gdalPath
     
     # optional and if missing it is added here:
     product$CCC <- getCollection(product,collection=collection)
@@ -328,7 +332,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
                   for(ix in seq_along(gdalSDS))
                   {
                     cmd1 <- paste0(opts$gdalPath,"gdal_translate -a_nodata ",NAS[[naID]]," '",gdalSDS[ix],"' '",randomName[ix],"'")   
-                    cmd2 <- paste0(opts$gdalPath,"gdal_edit.py -a_ullr -180 90 180 -90 '",randomName[ix],"'")
+                    cmd2 <- paste0(scriptPath,"gdal_edit.py -a_ullr -180 90 180 -90 '",randomName[ix],"'")
                     cmd3 <- paste0(opts$gdalPath, )
                     
                     if (.Platform$OS=="unix")
@@ -356,7 +360,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
                     ranpat     <- MODIS:::makeRandomString(length=21)
                     randomName <- paste0(outDir,"/deleteMe_",ranpat,".tif") 
                     on.exit(unlink(list.files(path=outDir,pattern=ranpat,full.names=TRUE),recursive=TRUE))
-                    cmd_pre <- paste0(opts$gdalPath,"gdal_calc.py ", 
+                    cmd_pre <- paste0(scriptPath,"gdal_calc.py ", 
                                        "-A ", "'", ifile, "'", 
                                        " --NoDataValue=", as.character(NAS[[naID]]), 
                                        " --outfile=", "'", randomName, "'",
