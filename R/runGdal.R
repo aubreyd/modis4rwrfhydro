@@ -30,7 +30,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
     product <- getProduct(product,quiet=TRUE)
     
     # check for optional python script path
-    if (isnull(scriptPath)) scriptPath == opts$gdalPath
+    if (is.null(scriptPath)) scriptPath == opts$gdalPath
     
     # optional and if missing it is added here:
     product$CCC <- getCollection(product,collection=collection)
