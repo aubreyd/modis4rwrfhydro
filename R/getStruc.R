@@ -7,7 +7,7 @@
 getStruc <- function(product, collection=NULL, server=getOption("MODIS_MODISserverOrder")[1], begin=NULL, end=NULL, forceCheck=FALSE, wait=1, stubbornness=10)
 {
   server <- toupper(server)[1]
-  if(!server %in% c("LPDAAC","LAADS"))
+  if(!server %in% c("LPDAAC","LAADS","NSIDC"))
   {
     stop("getStruc() Error! Server must be or 'LPDAAC' or 'LAADS'")
   }
@@ -95,9 +95,9 @@ getStruc <- function(product, collection=NULL, server=getOption("MODIS_MODISserv
       rm(FtpDayDirs)
     }
         
-    if (server=="LPDAAC")
+    if (server=="LPDAAC" | server=="NSIDC")
     {
-      startPath <- strsplit(path$remotePath$LPDAAC,"DATE")[[1]][1] # cut away everything behind DATE
+      startPath <- strsplit(path$remotePath[[server]],"DATE")[[1]][1] # cut away everything behind DATE
       for (g in 1:sturheit)
       {
         cat("Try:",g," \r")
@@ -109,7 +109,7 @@ getStruc <- function(product, collection=NULL, server=getOption("MODIS_MODISserv
         }
         Sys.sleep(wait)
       }
-      FtpDayDirs <- as.Date(as.character(FtpDayDirs),"%Y.%m.%d")
+      FtpDayDirs <- na.omit(as.Date(as.character(FtpDayDirs),"%Y.%m.%d"))
     } else if (server=="LAADS")
     {
       startPath <- strsplit(path$remotePath$LAADS,"YYYY")[[1]][1] # cut away everything behind YYYY

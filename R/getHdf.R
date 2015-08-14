@@ -202,7 +202,8 @@ getHdf <- function(product, begin=NULL, end=NULL, tileH=NULL, tileV=NULL, extent
           ntiles <- length(tileID)
         }
         
-        onlineInfo <- getStruc(product=product$PRODUCT[z],collection=product$CCC,server=opts$MODISserverOrder[1],begin=tLimits$begin,end=tLimits$end,wait=0)
+        server <- ifelse (product$SOURCE[z]=="NSIDC", "NSIDC", opts$MODISserverOrder[1])
+        onlineInfo <- getStruc(product=product$PRODUCT[z],collection=product$CCC,server=server,begin=tLimits$begin,end=tLimits$end,wait=0)
         if(!is.na(onlineInfo$online))
         {
           if (!onlineInfo$online & length(opts$MODISserverOrder)==2)
@@ -327,7 +328,8 @@ getHdf <- function(product, begin=NULL, end=NULL, tileH=NULL, tileV=NULL, extent
                       }
 
                       dates[[l]][i,j+1] <- HDF
-                      hdf <- ModisFileDownloader(HDF, wait=wait, quiet=quiet)
+                      server <- ifelse(product$SOURCE[z]=="NSIDC", "NSIDC", NULL)
+                      hdf <- ModisFileDownloader(HDF, wait=wait, quiet=quiet, server=server)
                       mtr[j] <- hdf
 
                     } else 

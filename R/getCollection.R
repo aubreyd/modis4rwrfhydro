@@ -18,6 +18,10 @@ getCollection <- function(product,collection=NULL,newest=TRUE,forceCheck=FALSE,a
     {
         stop("Unknown product")
     }
+    
+    # for now, force NSIDC products to collection 5
+    if (productN$SOURCE=="NSIDC") return("005")
+
     # load aux
 #    if (!file.exists(paste0(opts$auxPath,"collections.RData"))) # on the very first call use the delivered pre-updated version    
 #    {
@@ -41,7 +45,7 @@ getCollection <- function(product,collection=NULL,newest=TRUE,forceCheck=FALSE,a
     SRTM  <- MODIScollection[,grep(colnames(MODIScollection),pattern="SRTM")]
     MODIScollection <- cbind(MODIS,SRTM)
 
-    if (productN$SENSOR[1] !="C-Band-RADAR")
+    if (productN$SENSOR[1] !="C-Band-RADAR" & productN$SOURCE != "NSIDC")
     {    
       if (forceCheck | sum(!productN$PRODUCT %in% colnames(MODIScollection))>0) 
       {
@@ -51,7 +55,7 @@ getCollection <- function(product,collection=NULL,newest=TRUE,forceCheck=FALSE,a
     		{		
     		  ftp <- paste0(MODIS_FTPinfo$ftpstring1$basepath,"/",unique(productN$PF1)[i],"/")
     			cat("Updating collections from LPDAAC for platform:",unique(productN$PLATFORM)[i],"\n")
-    
+          cat(ftp)
     			if(exists("dirs")) 
     			{
     			    rm(dirs)
@@ -59,6 +63,7 @@ getCollection <- function(product,collection=NULL,newest=TRUE,forceCheck=FALSE,a
     			for (g in 1:sturheit)
     			{
     			  try(dirs <- MODIS:::filesUrl(ftp))
+            cat(dirs)
     				if(exists("dirs"))
     				{
     				  if(dirs != FALSE)

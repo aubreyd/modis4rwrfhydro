@@ -640,12 +640,15 @@ makeRandomString <- function(n=1, length=12)
 }
 
 # this function care about the download of files. Based on remotePath (result of genString) it alterates the effort on available sources and stops after succeded download or by reacing the stubbornness thresshold.
-ModisFileDownloader <- function(x, quiet=FALSE, wait=wait,...)
+ModisFileDownloader <- function(x, quiet=FALSE, wait=wait, server=NULL, ...)
 {
     x                 <- basename(x)
 
     opts              <- combineOptions(...)
     opts$stubbornness <- stubborn(opts$stubbornness)
+    
+    # add ability to specify server, i.e., NSIDC
+    if (is.null(server)) server <- opts$MODISserverOrder
 
     iw <- options()$warn 
     options(warn=-1)
@@ -658,23 +661,23 @@ ModisFileDownloader <- function(x, quiet=FALSE, wait=wait,...)
         path <- genString(x[a],...)
         path$localPath <- setPath(path$localPath)
         
-        hv <- seq_along(opts$MODISserverOrder)
+        hv <- seq_along(server)
         hv <- rep(hv,length=opts$stubbornness)
         g=1
         while(g <= opts$stubbornness) 
         {     
           if (!quiet)
           {
-              cat("\nGetting file from:",opts$MODISserverOrder[hv[g]],"\n############################\n")
+              cat("\nGetting file from:",server[hv[g]],"\n############################\n")
           }
           destfile <- paste0(path$localPath,x[a])
           
           if(!.Platform$OS=="windows" & opts$dlmethod=="aria2")
           {
-            out[a] <- system(paste0("aria2c -x 3 --file-allocation=none ",paste(path$remotePath[which(names(path$remotePath)==opts$MODISserverOrder[hv[g]])],x[a],sep="/",collapse="")," -d ", dirname(destfile)))
+            out[a] <- system(paste0("aria2c -x 3 --file-allocation=none ",paste(path$remotePath[which(names(path$remotePath)==server[hv[g]])],x[a],sep="/",collapse="")," -d ", dirname(destfile)))
           } else
           {
-            out[a] <- try(download.file(url=paste(path$remotePath[which(names(path$remotePath)==opts$MODISserverOrder[hv[g]])],x[a],sep="/",collapse=""),destfile=destfile,mode='wb', method=opts$dlmethod, quiet=quiet, cacheOK=FALSE),silent=TRUE)
+            out[a] <- try(download.file(url=paste(path$remotePath[which(names(path$remotePath)==server[hv[g]])],x[a],sep="/",collapse=""),destfile=destfile,mode='wb', method=opts$dlmethod, quiet=quiet, cacheOK=FALSE),silent=TRUE)
           }
           if (is.na(out[a])) {cat("File not found!\n"); unlink(destfile); break} # if NA then the url name is wrong!
           if (out[a]!=0 & !quiet) {cat("Remote connection failed! Re-try:",g,"\r")} 

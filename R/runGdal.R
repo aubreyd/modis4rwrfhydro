@@ -10,11 +10,11 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
     opts <- combineOptions(...)
     # debug:
     # opts <- MODIS:::combineOptions()
-    # product="MOD15A2"; collection=NULL; begin='2013.06.01'; end='2013.06.05'; tileH=NULL; tileV=NULL
+    # product="MOD11A1"; collection=NULL; begin='2013.06.01'; end='2013.06.05'; tileH=NULL; tileV=NULL
     # buffer=0.04; SDSstring=NULL; job=NULL; checkIntegrity=TRUE; wait=0.5; quiet=FALSE; scriptPath=NULL
     # exclList=list("Fpar_1km"="gt 100", "Lai_1km"="gt 100", "FparLai_QC"="255", "FparExtra_QC"="255", "FparStdDev_1km"="gt 100", "LaiStdDev_1km"="gt 100") 
     # resampList=list("Fpar_1km"="bilinear", "Lai_1km"="bilinear", "FparLai_QC"="mode", "FparExtra_QC"="mode", "FparStdDev_1km"="bilinear", "LaiStdDev_1km"="bilinear"), ...)     
-    # extent <- 
+    # extent <- raster::raster("~/d1/CO_UpperRioGrande/DOMAIN/geogrid_tmp.tif")
     
     if(!opts$gdalOk)
     {
@@ -206,7 +206,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
     
     for (z in seq_along(product$PRODUCT))
     { # z=1
-      todo <- paste(product$PRODUCT[z],".",product$CCC[[product$PRODUCT[z]]],sep="")    
+      todo <- paste(product$PRODUCT[z],".",product$CCC[z],sep="")    
       
       if(z==1)
       {
@@ -227,7 +227,8 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
       for(u in seq_along(todo))
       { # u=1
         ftpdirs      <- list()
-        ftpdirs[[1]] <- as.Date(MODIS:::getStruc(product=strsplit(todo[u],"\\.")[[1]][1],collection=strsplit(todo[u],"\\.")[[1]][2],begin=tLimits$begin,end=tLimits$end,server=opts$MODISserverOrder[1])$dates)
+        server <- ifelse (product$SOURCE[z]=="NSIDC", "NSIDC", opts$MODISserverOrder[1])
+        ftpdirs[[1]] <- as.Date(MODIS:::getStruc(product=strsplit(todo[u],"\\.")[[1]][1],collection=strsplit(todo[u],"\\.")[[1]][2],begin=tLimits$begin,end=tLimits$end,server=server)$dates)
         
         prodname <- strsplit(todo[u],"\\.")[[1]][1] 
         coll     <- strsplit(todo[u],"\\.")[[1]][2]
@@ -358,7 +359,11 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
                       ranpat2     <- MODIS:::makeRandomString(length=21)
                       randomName <- paste0(outDir,"/deleteMe_",ranpat2,".tif") 
                       on.exit(unlink(list.files(path=outDir,pattern=ranpat2,full.names=TRUE),recursive=TRUE))
-                      cmd_pre <- paste0(scriptPath,"gdal_calc.py ", 
+                      if (length(naID)>0) { #missing/non-existent nodata value case
+                        error(paste0("Missing no data value for variable ", SDS[[1]]$SDSnames[i], ". Remove exclusion values for this variable and try again."))
+                      }
+                      else {
+                        cmd_pre <- paste0(scriptPath,"gdal_calc.py ", 
                                        "-A ", "'", gdalSDS[m], "'", 
                                        " --NoDataValue=", as.character(NAS[[naID]]), 
                                        " --outfile=", "'", randomName, "'",
@@ -366,6 +371,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
                                        as.character(exclNum), ")+(",
                                        as.character(NAS[[naID]]), ")*(A", compStr2[[exclQual]], 
                                        as.character(exclNum), ")'", " --overwrite")
+                      }
                       if (!quiet) {print(cmd_pre)}
                       system(cmd_pre)
                       outList <- c(outList, randomName)
@@ -437,7 +443,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
                     if (length(exclID)>0) {
                       unlink(list.files(path=outDir,pattern=glob2rx("deleteMe_*.tif"),full.names=TRUE),recursive=TRUE)
                     }
-                  }
+                  } # END
                 } else
                 {
                   warning(paste0("No file found for date: ",avDates[l]))
