@@ -3,7 +3,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
                     extent=NULL, tileH=NULL, tileV=NULL, 
                     buffer=0, SDSstring=NULL, job=NULL, 
                     checkIntegrity=TRUE, wait=0.5, quiet=FALSE,
-                    exclList=NULL, resampList=NULL, 
+                    exclList=NULL, resampList=NULL, nodataList=NULL,
                     scriptPath=NULL, ...)
 
 {
@@ -359,7 +359,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
                       ranpat2     <- MODIS:::makeRandomString(length=21)
                       randomName <- paste0(outDir,"/deleteMe_",ranpat2,".tif") 
                       on.exit(unlink(list.files(path=outDir,pattern=ranpat2,full.names=TRUE),recursive=TRUE))
-                      if (length(naID)>0) { #missing/non-existent nodata value case
+                      if (length(naID)==0) { #missing/non-existent nodata value case
                         stop(paste0("Missing no data value for variable ", SDS[[1]]$SDSnames[i], ". Remove exclusion values for this variable and try again."))
                       }
                       else {
