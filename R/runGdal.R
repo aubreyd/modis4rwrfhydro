@@ -302,7 +302,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
                     exclQual <- unlist(strsplit(exclStr, split=" "))[1]
                     exclNum <- unlist(strsplit(exclStr, split=" "))[2]
                   } else {
-                    error("Invalid exclList entry.")
+                    stop("Invalid exclList entry.")
                     return()
                   }
                 }
@@ -360,7 +360,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
                       randomName <- paste0(outDir,"/deleteMe_",ranpat2,".tif") 
                       on.exit(unlink(list.files(path=outDir,pattern=ranpat2,full.names=TRUE),recursive=TRUE))
                       if (length(naID)>0) { #missing/non-existent nodata value case
-                        error(paste0("Missing no data value for variable ", SDS[[1]]$SDSnames[i], ". Remove exclusion values for this variable and try again."))
+                        stop(paste0("Missing no data value for variable ", SDS[[1]]$SDSnames[i], ". Remove exclusion values for this variable and try again."))
                       }
                       else {
                         cmd_pre <- paste0(scriptPath,"gdal_calc.py ", 
