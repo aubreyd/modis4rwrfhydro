@@ -328,7 +328,7 @@ getHdf <- function(product, begin=NULL, end=NULL, tileH=NULL, tileV=NULL, extent
                       }
 
                       dates[[l]][i,j+1] <- HDF
-                      server <- ifelse(product$SOURCE[z]=="NSIDC", "NSIDC", NULL)
+                      server <- ifelse(product$SOURCE[z]=="NSIDC", "NSIDC", opts$MODISserverOrder)
                       hdf <- ModisFileDownloader(HDF, wait=wait, quiet=quiet, server=server)
                       mtr[j] <- hdf
 
