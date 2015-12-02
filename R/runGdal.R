@@ -441,8 +441,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
                       unlink(list.files(path=outDir,pattern=ranpat,full.names=TRUE),recursive=TRUE)
                     }
                     if (length(exclID)>0) {
-                      unlink(list.files(path=outDir,pattern=ranpat,full.names=TRUE),recursive=TRUE)
-                      unlink(list.files(path=outDir,pattern=ranpat2,full.names=TRUE),recursive=TRUE)
+                      unlink(list.files(path=outDir,pattern=glob2rx("deleteMe_*.tif"),full.names=TRUE),recursive=TRUE)
                     }
                   } # END
                 } else
