@@ -441,17 +441,18 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
                       unlink(list.files(path=outDir,pattern=ranpat,full.names=TRUE),recursive=TRUE)
                     }
                     if (length(exclID)>0) {
-                      unlink(list.files(path=outDir,pattern=ranpat2,full.names=TRUE),recursive=TRUE)
+                      unlink(outList, recursive=TRUE)
+                      #unlink(list.files(path=outDir,pattern=ranpat2,full.names=TRUE),recursive=TRUE)
                       #unlink(list.files(path=outDir,pattern=glob2rx("deleteMe_*.tif"),full.names=TRUE),recursive=TRUE)
                     }
-                  } # END
-                } else
+                  } # END end for i (SDSnames)
+                } else # end if(length(files)>0)
                 {
                   warning(paste0("No file found for date: ",avDates[l]))
                 }
-               }
-            }
-        }
-    }
+               } # end for l (dates)
+            } # end if (sum(us,na.rm=TRUE)>0)
+        } # end for u (collection)
+    } #end for z (product)
 }
 
