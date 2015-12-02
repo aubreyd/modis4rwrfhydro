@@ -325,7 +325,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
                   }
                   ranpat     <- MODIS:::makeRandomString(length=21)
                   randomName <- paste0(outDir,"/deleteMe_",ranpat,".tif") 
-                  on.exit(unlink(list.files(path=outDir,pattern=ranpat,full.names=TRUE),recursive=TRUE))
+                  #on.exit(unlink(list.files(path=outDir,pattern=ranpat,full.names=TRUE),recursive=TRUE))
                   for(ix in seq_along(gdalSDS))
                   {
                     cmd1 <- paste0(opts$gdalPath,"gdal_translate -a_nodata ",NAS[[naID]]," '",gdalSDS[ix],"' '",randomName[ix],"'")   
@@ -358,7 +358,7 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
                     for (m in 1:length(gdalSDS)) {
                       ranpat2     <- MODIS:::makeRandomString(length=21)
                       randomName <- paste0(outDir,"/deleteMe_",ranpat2,".tif") 
-                      on.exit(unlink(list.files(path=outDir,pattern=ranpat2,full.names=TRUE),recursive=TRUE))
+                      #on.exit(unlink(list.files(path=outDir,pattern=ranpat2,full.names=TRUE),recursive=TRUE))
                       if (length(naID)==0) { #missing/non-existent nodata value case
                         stop(paste0("Missing no data value for variable ", SDS[[1]]$SDSnames[i], ". Remove exclusion values for this variable and try again."))
                       }
@@ -441,7 +441,8 @@ runGdal <- function(product, collection=NULL, begin=NULL,end=NULL,
                       unlink(list.files(path=outDir,pattern=ranpat,full.names=TRUE),recursive=TRUE)
                     }
                     if (length(exclID)>0) {
-                      unlink(list.files(path=outDir,pattern=glob2rx("deleteMe_*.tif"),full.names=TRUE),recursive=TRUE)
+                      unlink(list.files(path=outDir,pattern=ranpat2,full.names=TRUE),recursive=TRUE)
+                      #unlink(list.files(path=outDir,pattern=glob2rx("deleteMe_*.tif"),full.names=TRUE),recursive=TRUE)
                     }
                   } # END
                 } else
