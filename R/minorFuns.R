@@ -334,6 +334,7 @@ gdalWriteDriver <- function(renew = FALSE, quiet = TRUE,...)
     gdalOutDriver <- grep(gdalOutDriver,pattern="\\(rw",value=TRUE) # this regex must be preciser
     name          <- sapply(gdalOutDriver,function(x){strsplit(x,"\\(")[[1]][1]})
     name          <- gsub(as.character(name), pattern=" ", replacement="")
+    name <- sapply(name, function(x){return(strsplit(x, "-")[[1]][1])})
     
     description <- as.character(sapply(gdalOutDriver,function(x){strsplit(x,"\\): ")[[1]][2]}))
     
